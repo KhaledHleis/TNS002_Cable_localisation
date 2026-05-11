@@ -364,7 +364,21 @@ def detect_anomalies_windowed(
 # endregion
 
 # region #* aiding functions for geographic and geomagnetic data
-from pyproj import Transformer
+from pyproj import Transformer, Proj
+
+def latlon_to_cartesian(
+    longitude: np.ndarray,
+    latitude:  np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Convert WGS-84 longitude/latitude to a local Cartesian frame (m).
+    Origin = first trajectory point.  East → +x, North → +y.
+    """
+    lon0, lat0 = float(longitude[0]), float(latitude[0])
+    proj = Proj(proj="aeqd", lat_0=lat0, lon_0=lon0, datum="WGS84", units="m")
+    x_cart, y_cart = proj(longitude, latitude)
+    return np.asarray(x_cart, dtype=float), np.asarray(y_cart, dtype=float)
+
 
 
 def ned_to_frd(v_n, v_e, v_d, heading_rad):
