@@ -256,10 +256,10 @@ def detect_anomalies(
             conv_full[i, j] = __Matched_filter(basis_expanded[i], signal[j])
             import matplotlib.pyplot as plt
 
-            plt.figure()
-            plt.plot(signal[j])
-            plt.plot(basis_expanded[i])
-            plt.show(block=False)
+            # plt.figure()
+            # plt.plot(signal[j])
+            # plt.plot(basis_expanded[i])
+            # plt.show(block=False)
 
     if signal.shape[0] == 1:
         conv_full = conv_full[:, 0, :]

@@ -33,6 +33,9 @@ THRESHOLD_HOLES = 1.1
 FILENAME = "trajectories/manip_simu/manipS45.csv"
 SCALING_FACTOR = 0
 
+# add false detections for testing
+FAILING_PERSENTAGE = 50.0  # percentage of detection samples to randomly flip detection state of recorded samples (0-100)
+
 # Localisation (Bharti et al. 2020, Section IV)
 SIGMA_V   = 1.414   # observation noise std (m) — paper default
 PSI0_DEG  = 0.0     # initial pipe heading guess (degrees)
@@ -132,8 +135,16 @@ def main():
     # 2. Cable detection  (existing pipeline)
     # ------------------------------------------------------------------ #
     cable_indices = detect_cable(traj)
-    pf.plot_trajectory(traj.longitude, traj.latitude, traj.mag_norm, cable_indices)
-
+    
+        # Optionally add false detections for testing
+    if FAILING_PERSENTAGE > 0:
+        n_samples = len(traj.timestamp)
+        n_detections = len(cable_indices)
+        n_to_flip = int(n_detections * FAILING_PERSENTAGE / 100)
+        if n_to_flip > 0:
+            flip_indices = np.random.choice(np.arange(n_samples), size=n_to_flip, replace=False)
+            cable_indices = np.setxor1d(cable_indices, flip_indices)  # flip detection state
+            print(f"Flipped {n_to_flip} detections for testing (total now: {len(cable_indices)})")
     # ------------------------------------------------------------------ #
     # 3. Cable localisation  (Bharti et al. 2020 EKF)
     # ------------------------------------------------------------------ #
@@ -204,7 +215,18 @@ def _plot_localisation(
             "ro", ms=4, label="Centre detections")
 
     n_states = len(states)
-    ax.plot(states[:, 0], states[:, 1], "b-", lw=1.5, label="Pipe estimate")
+    idx = np.arange(len(states))
+
+    sc = ax.scatter(
+        states[:, 0],
+        states[:, 1],
+        c=idx,
+        cmap="viridis",   # choose any matplotlib colormap
+        s=10,
+        label="Pipe estimate"
+    )
+
+    plt.colorbar(sc, ax=ax, label="Point index")
     ax.plot(states[-1, 0], states[-1, 1], "b*", ms=12)
 
     # 2-σ ellipse at final estimate
@@ -257,7 +279,7 @@ def _plot_localisation(
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
 
 
 if __name__ == "__main__":
