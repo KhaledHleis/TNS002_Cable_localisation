@@ -148,6 +148,7 @@ def detect_anomalies(
     filter_width: int = 5000,
     drone_velocity: float = 1.0,
     method: str = "AMF",
+    theta = 90
 ) -> tuple[np.ndarray, np.ndarray]:
     signal = np.atleast_2d(signal)
     n_channels, N = signal.shape
@@ -159,11 +160,11 @@ def detect_anomalies(
         )
     elif method == "CMF":
         basis_functions, t_Tau = __cable_basis_functions(
-            filter_width, dov=target_depth / drone_velocity
+            filter_width, dov=target_depth / drone_velocity,theta=theta
         )
     elif method == "GradMF":
         basis_functions, t_Tau = __gradient_basis_functions(
-            filter_width, dov=target_depth / drone_velocity
+            filter_width, dov=target_depth / drone_velocity,theta=theta
         )
     else:
         assert False, f"Unknown method '{method}'. Valid options: 'AMF', 'CMF', 'GradMF'."

@@ -24,6 +24,7 @@ cutoff = 0.5
 DETECTION_METHOD = "CMF"
 USE_NORM = True
 TRIM_AMOUNT = 10
+THETA_PRIOR = 45
 
 # Thresholds
 THRESHOLD_PEAKS = 0.5
@@ -94,6 +95,8 @@ def detect_cable(traj, sensor: str | int = "default") -> np.ndarray:
         traj.timestamp,
         method=DETECTION_METHOD,
         drone_velocity=drone_velocity,
+        theta=THETA_PRIOR
+        
     )
     rx_filtered, rx_merged = trim_and_merge(convolution_output)
     _, peak_anoms, hole_anoms = detect_anomalies_with_confidence(
@@ -138,19 +141,25 @@ def main():
     if pairs:
         indices_1_paired = np.array([p[0] for p in pairs])
         indices_2_paired = np.array([p[1] for p in pairs])
-        # print("velocity near the second detection")
-        # i = indices_1_paired[1]
-        # amount = 30
-        # drone_velocity_local = estimate_average_velocity(traj.longitude[i-amount:i+amount], traj.latitude[i-amount:i+amount],DT)
-        # print(drone_velocity_local)
+        print("velocity near the second detection")
+        i = indices_1_paired[1]
+        amount = 30
+        drone_velocity_local = estimate_average_velocity(traj.longitude[i-amount:i+amount], traj.latitude[i-amount:i+amount],DT)
+        print(drone_velocity_local)
         print(f"distances: \n {indices_2_paired-indices_1_paired}")
     else:
         print("No corresponding detections found.")
         return
 
-    angles = batch_estimate_angles(
-        indices_1_paired, indices_2_paired, Fs=FS, drone_velocity=drone_velocity
-    )
+    angles = []
+    for s1,s2 in zip(indices_1_paired,indices_2_paired):
+        amount = 30
+        local_velocity = estimate_average_velocity(traj.longitude[s1-amount:s1+amount], traj.latitude[s1-amount:s1+amount],DT)
+        angles.append(estimate_angle(s1,s2,Fs=FS,drone_velocity=local_velocity))
+    angles = 90 - np.array(angles)
+    # batch_estimate_angles(
+    #     indices_1_paired, indices_2_paired, Fs=FS, drone_velocity=drone_velocity_local
+    # )
     print(f"angles estimated from this trajectory: \n {angles}")
 
 
